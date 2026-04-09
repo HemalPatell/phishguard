@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}PhishGuard — Create Account{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-5 col-lg-4">
+    <div class="text-center mb-4 animate-in">
+      <div class="mx-auto mb-3 d-flex align-items-center justify-content-center"
+           style="width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,var(--accent),var(--accent-2));">
+        <i class="bi bi-person-plus" style="font-size:1.8rem;color:#fff;"></i>
+      </div>
+      <h1 style="font-size:1.8rem;font-weight:800;">Create account</h1>
+      <p style="color:var(--text-muted);font-size:.875rem;">Start protecting yourself from phishing</p>
+    </div>
+
+    <div class="card-dark p-4 animate-in delay-1" style="box-shadow:var(--glow-purple);">
+      <form method="POST" novalidate>
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="mb-3">
+          <label style="font-size:.8rem;font-weight:600;color:var(--text-muted);letter-spacing:.5px;text-transform:uppercase;">
+            {{ field.label }}
+          </label>
+          <div class="mt-1">{{ field }}</div>
+          {% if field.errors %}
+            {% for err in field.errors %}
+              <div style="font-size:.78rem;color:var(--danger);margin-top:.3rem;">{{ err }}</div>
+            {% endfor %}
+          {% endif %}
+          {% if field.help_text and field.name == "password1" %}
+            <div style="font-size:.72rem;color:var(--text-muted);margin-top:.3rem;">{{ field.help_text }}</div>
+          {% endif %}
+        </div>
+        {% endfor %}
+        <button type="submit" class="btn-scan btn w-100 mt-2">
+          <i class="bi bi-person-check me-2"></i>Create Account
+        </button>
+      </form>
+    </div>
+
+    <p class="text-center mt-3 animate-in delay-2" style="font-size:.875rem;color:var(--text-muted);">
+      Already have an account?
+      <a href="{% url 'accounts:login' %}" style="color:var(--accent);text-decoration:none;font-weight:600;">Sign in →</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

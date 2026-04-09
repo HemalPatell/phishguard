@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}PhishGuard — Scan History{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4 animate-in">
+  <div>
+    <p class="section-title mb-1">Scan History</p>
+    <h2 style="font-weight:800;">All Analysed URLs</h2>
+  </div>
+  <a href="{% url 'detector:index' %}" class="btn-scan btn">
+    <i class="bi bi-plus-lg me-2"></i>New Scan
+  </a>
+</div>
+
+<!-- Mini stats -->
+<div class="row g-3 mb-4 animate-in delay-1">
+  <div class="col-auto">
+    <div class="stat-card cyan py-3 px-4">
+      <div class="stat-value cyan" style="font-size:1.8rem;">{{ total }}</div>
+      <div class="stat-label">Total</div>
+    </div>
+  </div>
+  <div class="col-auto">
+    <div class="stat-card red py-3 px-4">
+      <div class="stat-value red" style="font-size:1.8rem;">{{ phishing }}</div>
+      <div class="stat-label">Phishing</div>
+    </div>
+  </div>
+  <div class="col-auto">
+    <div class="stat-card green py-3 px-4">
+      <div class="stat-value green" style="font-size:1.8rem;">{{ legit }}</div>
+      <div class="stat-label">Legitimate</div>
+    </div>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="d-flex gap-2 mb-3 animate-in delay-2">
+  <a href="?filter=all"
+     class="btn btn-sm {% if filter_type == 'all' %}btn-scan{% else %}btn-outline-accent{% endif %}"
+     style="{% if filter_type != 'all' %}border-radius:8px;{% endif %}">All</a>
+  <a href="?filter=phishing"
+     class="btn btn-sm {% if filter_type == 'phishing' %}btn-scan{% else %}btn-outline-accent{% endif %}"
+     style="{% if filter_type != 'phishing' %}border-radius:8px;{% endif %}">Phishing</a>
+  <a href="?filter=legitimate"
+     class="btn btn-sm {% if filter_type == 'legitimate' %}btn-scan{% else %}btn-outline-accent{% endif %}"
+     style="{% if filter_type != 'legitimate' %}border-radius:8px;{% endif %}">Legitimate</a>
+</div>
+
+<!-- Table -->
+<div class="card-dark overflow-hidden animate-in delay-3">
+  {% if page_obj %}
+  <div class="table-responsive">
+    <table class="table history-table mb-0">
+      <thead>
+        <tr>
+          <th class="ps-4 py-3">#</th>
+          <th class="py-3">URL</th>
+          <th class="py-3">Result</th>
+          <th class="py-3">Confidence</th>
+          <th class="py-3">User</th>
+          <th class="py-3">Scanned At</th>
+          <th class="py-3 pe-4">Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for scan in page_obj %}
+        <tr>
+          <td class="ps-4" style="color:var(--text-muted);font-family:var(--font-mono);font-size:.78rem;">{{ scan.pk }}</td>
+          <td style="max-width:280px;font-family:var(--font-mono);font-size:.78rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+            {{ scan.url }}
+          </td>
+          <td>
+            {% if scan.is_phishing %}<span class="badge-phishing">⚠ PHISHING</span>
+            {% else %}<span class="badge-legit">✓ SAFE</span>{% endif %}
+          </td>
+          <td>
+            <div style="min-width:100px;">
+              <div class="d-flex justify-content-between mb-1">
+                <span style="font-family:var(--font-mono);font-size:.78rem;">{{ scan.confidence }}%</span>
+              </div>
+              <div class="conf-bar-bg">
+                <div class="conf-bar-fill"
+                     style="width:{{ scan.confidence }}%;
+                            background:{% if scan.is_phishing %}var(--danger){% else %}var(--success){% endif %};">
+                </div>
+              </div>
+            </div>
+          </td>
+          <td style="font-size:.82rem;color:var(--text-muted);">
+            {% if scan.user %}{{ scan.user.username }}{% else %}—{% endif %}
+          </td>
+          <td style="font-size:.78rem;color:var(--text-muted);white-space:nowrap;">
+            {{ scan.scanned_at|date:"M j, Y H:i" }}
+          </td>
+          <td class="pe-4">
+            <a href="{% url 'detector:result' scan.pk %}" class="btn-outline-accent btn" style="padding:.3rem .8rem;font-size:.75rem;">
+              View <i class="bi bi-arrow-right"></i>
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if page_obj.has_other_pages %}
+  <div class="d-flex justify-content-center gap-2 p-3" style="border-top:1px solid var(--border);">
+    {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}&filter={{ filter_type }}"
+         class="btn-outline-accent btn" style="padding:.4rem 1rem;font-size:.82rem;">
+        <i class="bi bi-chevron-left"></i> Prev
+      </a>
+    {% endif %}
+    <span style="padding:.5rem 1rem;font-size:.82rem;color:var(--text-muted);font-family:var(--font-mono);">
+      {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+    </span>
+    {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}&filter={{ filter_type }}"
+         class="btn-outline-accent btn" style="padding:.4rem 1rem;font-size:.82rem;">
+        Next <i class="bi bi-chevron-right"></i>
+      </a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="text-center py-5">
+    <i class="bi bi-inbox" style="font-size:3rem;color:var(--text-muted);"></i>
+    <p class="mt-3" style="color:var(--text-muted);">No scans found. <a href="{% url 'detector:index' %}" style="color:var(--accent);">Scan your first URL</a>.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

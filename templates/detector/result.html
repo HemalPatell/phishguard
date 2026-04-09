@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block title %}PhishGuard — Scan Result{% endblock %}
+
+{% block content %}
+<div class="mb-4 animate-in">
+  <a href="{% url 'detector:index' %}" style="color:var(--text-muted);font-size:.85rem;text-decoration:none;font-weight:600;">
+    <i class="bi bi-arrow-left me-1"></i>Back to Scanner
+  </a>
+</div>
+
+<!-- Result hero card -->
+<div class="card-dark p-4 p-md-5 mb-4 animate-in delay-1 text-center"
+     style="box-shadow:{% if scan.is_phishing %}var(--glow-red){% else %}var(--glow-green){% endif %};">
+
+  <!-- Big icon -->
+  <div class="mx-auto mb-3 d-flex align-items-center justify-content-center"
+       style="width:80px;height:80px;border-radius:50%;
+              background:{% if scan.is_phishing %}rgba(255,59,92,.12){% else %}rgba(0,230,118,.1){% endif %};
+              border:2px solid {% if scan.is_phishing %}rgba(255,59,92,.35){% else %}rgba(0,230,118,.3){% endif %};">
+    {% if scan.is_phishing %}
+      <i class="bi bi-shield-exclamation" style="font-size:2.2rem;color:var(--danger);"></i>
+    {% else %}
+      <i class="bi bi-shield-check" style="font-size:2.2rem;color:var(--success);"></i>
+    {% endif %}
+  </div>
+
+  <p class="section-title mb-1">Verdict</p>
+  {% if scan.is_phishing %}
+    <h2 style="font-size:2.5rem;font-weight:800;color:var(--danger);">PHISHING</h2>
+    <p style="color:var(--text-muted);margin-top:.4rem;">
+      This URL shows characteristics consistent with phishing attacks.
+      Do <strong style="color:var(--danger);">not</strong> visit this site.
+    </p>
+  {% else %}
+    <h2 style="font-size:2.5rem;font-weight:800;color:var(--success);">LEGITIMATE</h2>
+    <p style="color:var(--text-muted);margin-top:.4rem;">
+      No phishing indicators detected. This URL appears to be safe.
+    </p>
+  {% endif %}
+
+  <!-- URL display -->
+  <div class="mt-3 p-3 rounded" style="background:var(--surface-2);border:1px solid var(--border);">
+    <p style="font-family:var(--font-mono);font-size:.82rem;color:var(--text);word-break:break-all;margin:0;">
+      {{ scan.url }}
+    </p>
+  </div>
+
+  <!-- Confidence -->
+  <div class="mt-4" style="max-width:400px;margin:1.5rem auto 0;">
+    <div class="d-flex justify-content-between mb-1" style="font-size:.8rem;">
+      <span style="color:var(--text-muted);font-weight:600;">Model Confidence</span>
+      <span style="font-family:var(--font-mono);font-weight:700;
+                   color:{% if scan.is_phishing %}var(--danger){% else %}var(--success){% endif %};">
+        {{ scan.confidence }}%
+      </span>
+    </div>
+    <div class="conf-bar-bg">
+      <div class="conf-bar-fill" id="confBar"
+           style="width:0%;background:{% if scan.is_phishing %}var(--danger){% else %}var(--success){% endif %};">
+      </div>
+    </div>
+  </div>
+
+  <!-- Meta -->
+  <p style="font-size:.75rem;color:var(--text-muted);margin-top:1.2rem;">
+    Scanned {{ scan.scanned_at|date:"M j, Y" }} at {{ scan.scanned_at|time:"H:i" }} UTC
+    {% if scan.user %} · by <strong style="color:var(--text);">{{ scan.user.username }}</strong>{% endif %}
+  </p>
+</div>
+
+<!-- Feature breakdown -->
+{% if features_display %}
+<div class="row g-4 animate-in delay-2">
+  <div class="col-lg-6">
+    <div class="card-dark p-4 h-100">
+      <p class="section-title">Feature Analysis</p>
+      {% for feat in features_display %}
+      <div class="feature-row">
+        <span class="feature-name">{{ feat.name }}</span>
+        <span class="feature-val">
+          {% if feat.key == "uses_https" or feat.key == "ip_in_url" or feat.key == "has_query" or feat.key == "has_double_slash" %}
+            {% if feat.value == 1 %}
+              <span style="color:{% if feat.key == 'uses_https' %}var(--success){% else %}var(--danger){% endif %};">
+                {% if feat.key == 'uses_https' %}Yes ✓{% else %}Yes ⚠{% endif %}
+              </span>
+            {% else %}
+              <span style="color:var(--text-muted);">No</span>
+            {% endif %}
+          {% else %}
+            {{ feat.value }}
+          {% endif %}
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card-dark p-4 h-100">
+      <p class="section-title">Risk Indicators</p>
+
+      {% if scan.features_json %}
+        {% with f=scan.features_json %}
+
+        <!-- HTTPS -->
+        <div class="d-flex align-items-start gap-3 mb-3 p-3 rounded"
+             style="background:var(--surface-2);border:1px solid var(--border);">
+          <span style="font-size:1.2rem;">{% if f.uses_https %}🔒{% else %}⚠️{% endif %}</span>
+          <div>
+            <div style="font-weight:600;font-size:.85rem;">HTTPS Encryption</div>
+            <div style="font-size:.78rem;color:var(--text-muted);">
+              {% if f.uses_https %}Connection is encrypted — good sign.
+              {% else %}No HTTPS — data sent in plain text.{% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- IP Address -->
+        <div class="d-flex align-items-start gap-3 mb-3 p-3 rounded"
+             style="background:var(--surface-2);border:1px solid var(--border);">
+          <span style="font-size:1.2rem;">{% if f.ip_in_url %}🚩{% else %}✅{% endif %}</span>
+          <div>
+            <div style="font-weight:600;font-size:.85rem;">IP Address in URL</div>
+            <div style="font-size:.78rem;color:var(--text-muted);">
+              {% if f.ip_in_url %}IP-based URL — classic phishing tactic.
+              {% else %}Domain name used — normal.{% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Suspicious keywords -->
+        <div class="d-flex align-items-start gap-3 mb-3 p-3 rounded"
+             style="background:var(--surface-2);border:1px solid var(--border);">
+          <span style="font-size:1.2rem;">{% if f.suspicious_count > 1 %}🚩{% elif f.suspicious_count == 1 %}⚠️{% else %}✅{% endif %}</span>
+          <div>
+            <div style="font-weight:600;font-size:.85rem;">Suspicious Keywords</div>
+            <div style="font-size:.78rem;color:var(--text-muted);">
+              Found {{ f.suspicious_count }} suspicious keyword{{ f.suspicious_count|pluralize }} in URL.
+            </div>
+          </div>
+        </div>
+
+        <!-- Subdomains -->
+        <div class="d-flex align-items-start gap-3 p-3 rounded"
+             style="background:var(--surface-2);border:1px solid var(--border);">
+          <span style="font-size:1.2rem;">{% if f.subdomain_count > 2 %}🚩{% elif f.subdomain_count > 0 %}⚠️{% else %}✅{% endif %}</span>
+          <div>
+            <div style="font-weight:600;font-size:.85rem;">Subdomain Depth</div>
+            <div style="font-size:.78rem;color:var(--text-muted);">
+              {{ f.subdomain_count }} subdomain{{ f.subdomain_count|pluralize }} detected.
+              {% if f.subdomain_count > 2 %}Excessive nesting is suspicious.{% endif %}
+            </div>
+          </div>
+        </div>
+        {% endwith %}
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Actions -->
+<div class="d-flex gap-3 flex-wrap mt-4 animate-in delay-3">
+  <a href="{% url 'detector:index' %}" class="btn-scan btn">
+    <i class="bi bi-search me-2"></i>Scan Another URL
+  </a>
+  <a href="{% url 'detector:history' %}" class="btn-outline-accent btn">
+    <i class="bi bi-clock-history me-2"></i>View History
+  </a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Animate confidence bar on load
+  window.addEventListener("load", () => {
+    setTimeout(() => {
+      document.getElementById("confBar").style.width = "{{ scan.confidence }}%";
+    }, 200);
+  });
+</script>
+{% endblock %}

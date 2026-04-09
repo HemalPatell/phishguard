@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}PhishGuard — Login{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-5 col-lg-4">
+    <div class="text-center mb-4 animate-in">
+      <div class="mx-auto mb-3 d-flex align-items-center justify-content-center"
+           style="width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,var(--accent),var(--accent-2));">
+        <i class="bi bi-shield-check" style="font-size:1.8rem;color:#fff;"></i>
+      </div>
+      <h1 style="font-size:1.8rem;font-weight:800;">Welcome back</h1>
+      <p style="color:var(--text-muted);font-size:.875rem;">Sign in to PhishGuard</p>
+    </div>
+
+    <div class="card-dark p-4 animate-in delay-1" style="box-shadow:var(--glow-cyan);">
+      <form method="POST" novalidate>
+        {% csrf_token %}
+        <div class="mb-3">
+          <label style="font-size:.8rem;font-weight:600;color:var(--text-muted);letter-spacing:.5px;text-transform:uppercase;">Username</label>
+          <div class="mt-1">{{ form.username }}</div>
+        </div>
+        <div class="mb-4">
+          <label style="font-size:.8rem;font-weight:600;color:var(--text-muted);letter-spacing:.5px;text-transform:uppercase;">Password</label>
+          <div class="mt-1">{{ form.password }}</div>
+        </div>
+        {% if form.errors %}
+        <div class="alert alert-danger" style="font-size:.82rem;border-radius:8px;background:rgba(255,59,92,.1);border:1px solid rgba(255,59,92,.3);color:var(--danger);">
+          <i class="bi bi-exclamation-triangle me-2"></i>Invalid username or password.
+        </div>
+        {% endif %}
+        <button type="submit" class="btn-scan btn w-100">
+          <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+        </button>
+      </form>
+    </div>
+
+    <p class="text-center mt-3 animate-in delay-2" style="font-size:.875rem;color:var(--text-muted);">
+      No account?
+      <a href="{% url 'accounts:register' %}" style="color:var(--accent);text-decoration:none;font-weight:600;">Create one →</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

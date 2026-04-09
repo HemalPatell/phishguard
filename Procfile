@@ -1,0 +1,1 @@
+web: gunicorn phishing_detector.wsgi:application --bind 0.0.0.0:$PORT
